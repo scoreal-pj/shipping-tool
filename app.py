@@ -158,26 +158,9 @@ elif menu == "📮 ゆうびん後納計算":
     all_tot = tot_1cm + tot_2cm + tot_3cm
 
     # ----------------------------------------------------
-    # 最重要サマリー表示（個数・後納運賃）
+    # ゆうパケット一覧表（最下行の合計で集計確認）
     # ----------------------------------------------------
     st.markdown("---")
-    summary_html = f"""
-    <div style="display:flex; gap:20px; margin-bottom:15px;">
-        <div style="flex:1; background:#f0f7ff; border:2px solid #0066cc; border-radius:10px; padding:16px 20px; text-align:center;">
-            <div style="font-size:15px; color:#555; font-weight:bold; margin-bottom:5px;">📮 総 個 数</div>
-            <div style="font-size:36px; font-weight:900; color:#0056b3;">{all_cnt:,} <span style="font-size:18px; font-weight:normal;">通</span></div>
-        </div>
-        <div style="flex:1; background:#fff8ee; border:2px solid #e67e22; border-radius:10px; padding:16px 20px; text-align:center;">
-            <div style="font-size:15px; color:#555; font-weight:bold; margin-bottom:5px;">💰 合計（後納運賃）</div>
-            <div style="font-size:36px; font-weight:900; color:#d35400;">{all_tot:,} <span style="font-size:18px; font-weight:normal;">円</span></div>
-        </div>
-    </div>
-    """
-    st.markdown(summary_html, unsafe_allow_html=True)
-
-    # ----------------------------------------------------
-    # ゆうパケット一覧表
-    # ----------------------------------------------------
     table_packet_html = f"""
     <div style="width:100%; margin-bottom:25px;">
         <table style="width:100%; border-collapse:collapse; font-size:14px; text-align:center; background:#fff;">
