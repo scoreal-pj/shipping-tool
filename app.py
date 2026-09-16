@@ -118,7 +118,7 @@ if menu == "📦 出荷CSV整形":
                 st.error(f"`{f.name}` 内に判定用列が見つかりませんでした。")
 
 # ==========================================
-# 2. ゆうびん後納計算機能（個数・合計強調型）
+# 2. ゆうびん後納計算機能
 # ==========================================
 elif menu == "📮 ゆうびん後納計算":
     st.title("📮 ゆうびん後納計算（ゆうパケット）")
@@ -158,7 +158,7 @@ elif menu == "📮 ゆうびん後納計算":
     all_tot = tot_1cm + tot_2cm + tot_3cm
 
     # ----------------------------------------------------
-    # 最重要サマリー表示（特大フォント＆カラー強調）
+    # 最重要サマリー表示（個数・後納運賃）
     # ----------------------------------------------------
     st.markdown("---")
     summary_html = f"""
@@ -176,7 +176,7 @@ elif menu == "📮 ゆうびん後納計算":
     st.markdown(summary_html, unsafe_allow_html=True)
 
     # ----------------------------------------------------
-    # 一覧表（個数・合計を太字・特大化・カラー背景で強調）
+    # ゆうパケット一覧表
     # ----------------------------------------------------
     table_packet_html = f"""
     <div style="width:100%; margin-bottom:25px;">
@@ -226,100 +226,121 @@ elif menu == "📮 ゆうびん後納計算":
     st.markdown(table_packet_html, unsafe_allow_html=True)
 
     # ==========================================
-    # 送料早見表セクション（ゆうパック 60〜120サイズ）
+    # ゆうパック送料早見表（正規料金を最強調配置）
     # ==========================================
     st.markdown("---")
-    st.subheader("📋 送料早見表")
+    st.subheader("📋 ゆうパック 送料早見表（兵庫発）")
+    st.caption("客対応時は **太字の「正規料金」** を案内。右側の契約・差額は自社確認用です。")
 
     youpack_html = """
     <div style="width:100%; overflow-x:auto; margin-bottom:20px;">
         <table style="width:100%; border-collapse:collapse; font-size:13px; text-align:center; background:#fff;">
             <thead>
-                <tr style="background:#f1f3f5; border-bottom:2px solid #ccc;">
-                    <th style="padding:8px 6px; border:1px solid #ddd; width:16%;">地域</th>
-                    <th style="padding:8px 6px; border:1px solid #ddd; width:44%;">対象都道府県</th>
-                    <th style="padding:8px 5px; border:1px solid #ddd; width:9%;">60(正規)</th>
-                    <th style="padding:8px 5px; border:1px solid #ddd; width:9%; background:#e8f4fd;">60(契約)</th>
-                    <th style="padding:8px 5px; border:1px solid #ddd; width:9%;">80(正規)</th>
-                    <th style="padding:8px 5px; border:1px solid #ddd; width:9%; background:#e8f4fd;">80(契約)</th>
-                    <th style="padding:8px 5px; border:1px solid #ddd; width:9%;">100(正規)</th>
-                    <th style="padding:8px 5px; border:1px solid #ddd; width:9%;">120(正規)</th>
+                <tr style="background:#2c3e50; color:#fff;">
+                    <th rowspan="2" style="padding:8px 4px; border:1px solid #455a64; width:13%;">地域</th>
+                    <th rowspan="2" style="padding:8px 6px; border:1px solid #455a64; width:33%;">対象都道府県</th>
+                    <th colspan="4" style="padding:6px; border:1px solid #455a64; background:#0056b3; font-size:14px;">【お客様提示用】 正規料金</th>
+                    <th colspan="2" style="padding:6px; border:1px solid #455a64; background:#d35400; font-size:12.5px;">60サイズ自社差額</th>
+                    <th colspan="2" style="padding:6px; border:1px solid #455a64; background:#d35400; font-size:12.5px;">80サイズ自社差額</th>
+                </tr>
+                <tr style="background:#e8f4fd; color:#003366; font-weight:bold; border-bottom:2px solid #999;">
+                    <th style="padding:8px 4px; border:1px solid #bcd8f5; width:8%; font-size:13px;">60サイズ</th>
+                    <th style="padding:8px 4px; border:1px solid #bcd8f5; width:8%; font-size:13px;">80サイズ</th>
+                    <th style="padding:8px 4px; border:1px solid #bcd8f5; width:9%; font-size:13px;">100サイズ</th>
+                    <th style="padding:8px 4px; border:1px solid #bcd8f5; width:9%; font-size:13px;">120サイズ</th>
+                    <th style="padding:6px 2px; border:1px solid #ddd; width:6.5%; background:#fff3e0; color:#b94a00; font-size:11.5px;">契約運賃</th>
+                    <th style="padding:6px 2px; border:1px solid #ddd; width:6.5%; background:#ffe0b2; color:#d35400; font-size:11.5px;">差額</th>
+                    <th style="padding:6px 2px; border:1px solid #ddd; width:6.5%; background:#fff3e0; color:#b94a00; font-size:11.5px;">契約運賃</th>
+                    <th style="padding:6px 2px; border:1px solid #ddd; width:6.5%; background:#ffe0b2; color:#d35400; font-size:11.5px;">差額</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
-                    <td style="padding:6px; border:1px solid #ddd; font-weight:bold;">兵庫県内</td>
-                    <td style="padding:6px; border:1px solid #ddd; text-align:left;">兵庫</td>
-                    <td style="padding:6px; border:1px solid #ddd;">820円</td>
-                    <td style="padding:6px; border:1px solid #ddd; font-weight:bold; color:#0056b3; background:#f8fbfe;">499円</td>
-                    <td style="padding:6px; border:1px solid #ddd;">1,130円</td>
-                    <td style="padding:6px; border:1px solid #ddd; font-weight:bold; color:#0056b3; background:#f8fbfe;">688円</td>
-                    <td style="padding:6px; border:1px solid #ddd;">1,450円</td>
-                    <td style="padding:6px; border:1px solid #ddd;">1,770円</td>
+                    <td style="padding:8px 4px; border:1px solid #ddd; font-weight:bold; font-size:14px; background:#f9f9f9;">兵庫県内</td>
+                    <td style="padding:8px 6px; border:1px solid #ddd; text-align:left;">兵庫</td>
+                    <td style="padding:8px 4px; border:1px solid #bcd8f5; font-size:16px; font-weight:900; color:#0056b3; background:#f4f9fe;">820円</td>
+                    <td style="padding:8px 4px; border:1px solid #bcd8f5; font-size:16px; font-weight:900; color:#0056b3; background:#f4f9fe;">1,130円</td>
+                    <td style="padding:8px 4px; border:1px solid #bcd8f5; font-size:15px; font-weight:900; color:#0056b3; background:#f4f9fe;">1,450円</td>
+                    <td style="padding:8px 4px; border:1px solid #bcd8f5; font-size:15px; font-weight:900; color:#0056b3; background:#f4f9fe;">1,770円</td>
+                    <td style="padding:8px 2px; border:1px solid #ddd; color:#555; background:#fffcf6;">499円</td>
+                    <td style="padding:8px 2px; border:1px solid #ddd; font-weight:bold; color:#27ae60; background:#f6fbf7;">+321円</td>
+                    <td style="padding:8px 2px; border:1px solid #ddd; color:#555; background:#fffcf6;">688円</td>
+                    <td style="padding:8px 2px; border:1px solid #ddd; font-weight:bold; color:#27ae60; background:#f6fbf7;">+442円</td>
                 </tr>
                 <tr>
-                    <td style="padding:6px; border:1px solid #ddd; font-weight:bold;">北陸・東海<br>近畿・中国・四国</td>
-                    <td style="padding:6px; border:1px solid #ddd; text-align:left; font-size:12px;">富山 石川 福井 / 静岡 愛知 岐阜 三重<br>大阪 京都 奈良 滋賀 和歌山 / 岡山 広島 鳥取 島根 山口<br>徳島 香川 愛媛 高知</td>
-                    <td style="padding:6px; border:1px solid #ddd;">880円</td>
-                    <td style="padding:6px; border:1px solid #ddd; font-weight:bold; color:#0056b3; background:#f8fbfe;">536円</td>
-                    <td style="padding:6px; border:1px solid #ddd;">1,200円</td>
-                    <td style="padding:6px; border:1px solid #ddd; font-weight:bold; color:#0056b3; background:#f8fbfe;">731円</td>
-                    <td style="padding:6px; border:1px solid #ddd;">1,500円</td>
-                    <td style="padding:6px; border:1px solid #ddd;">1,830円</td>
+                    <td style="padding:8px 4px; border:1px solid #ddd; font-weight:bold; font-size:13.5px; background:#f9f9f9;">北陸・東海<br>近畿・中国・四国</td>
+                    <td style="padding:8px 6px; border:1px solid #ddd; text-align:left; font-size:11.5px; line-height:1.4;">富山 石川 福井 / 静岡 愛知 岐阜 三重<br>大阪 京都 奈良 滋賀 和歌山 / 岡山 広島 鳥取 島根 山口<br>徳島 香川 愛媛 高知</td>
+                    <td style="padding:8px 4px; border:1px solid #bcd8f5; font-size:16px; font-weight:900; color:#0056b3; background:#f4f9fe;">880円</td>
+                    <td style="padding:8px 4px; border:1px solid #bcd8f5; font-size:16px; font-weight:900; color:#0056b3; background:#f4f9fe;">1,200円</td>
+                    <td style="padding:8px 4px; border:1px solid #bcd8f5; font-size:15px; font-weight:900; color:#0056b3; background:#f4f9fe;">1,500円</td>
+                    <td style="padding:8px 4px; border:1px solid #bcd8f5; font-size:15px; font-weight:900; color:#0056b3; background:#f4f9fe;">1,830円</td>
+                    <td style="padding:8px 2px; border:1px solid #ddd; color:#555; background:#fffcf6;">536円</td>
+                    <td style="padding:8px 2px; border:1px solid #ddd; font-weight:bold; color:#27ae60; background:#f6fbf7;">+344円</td>
+                    <td style="padding:8px 2px; border:1px solid #ddd; color:#555; background:#fffcf6;">731円</td>
+                    <td style="padding:8px 2px; border:1px solid #ddd; font-weight:bold; color:#27ae60; background:#f6fbf7;">+469円</td>
                 </tr>
                 <tr>
-                    <td style="padding:6px; border:1px solid #ddd; font-weight:bold;">関東・信越</td>
-                    <td style="padding:6px; border:1px solid #ddd; text-align:left; font-size:12px;">茨城 栃木 群馬 埼玉 千葉 東京 神奈川 山梨 / 新潟 長野</td>
-                    <td style="padding:6px; border:1px solid #ddd;">990円</td>
-                    <td style="padding:6px; border:1px solid #ddd; font-weight:bold; color:#0056b3; background:#f8fbfe;">603円</td>
-                    <td style="padding:6px; border:1px solid #ddd;">1,310円</td>
-                    <td style="padding:6px; border:1px solid #ddd; font-weight:bold; color:#0056b3; background:#f8fbfe;">798円</td>
-                    <td style="padding:6px; border:1px solid #ddd;">1,620円</td>
-                    <td style="padding:6px; border:1px solid #ddd;">1,940円</td>
+                    <td style="padding:8px 4px; border:1px solid #ddd; font-weight:bold; font-size:14px; background:#f9f9f9;">関東・信越</td>
+                    <td style="padding:8px 6px; border:1px solid #ddd; text-align:left; font-size:11.5px;">茨城 栃木 群馬 埼玉 千葉 東京 神奈川 山梨 / 新潟 長野</td>
+                    <td style="padding:8px 4px; border:1px solid #bcd8f5; font-size:16px; font-weight:900; color:#0056b3; background:#f4f9fe;">990円</td>
+                    <td style="padding:8px 4px; border:1px solid #bcd8f5; font-size:16px; font-weight:900; color:#0056b3; background:#f4f9fe;">1,310円</td>
+                    <td style="padding:8px 4px; border:1px solid #bcd8f5; font-size:15px; font-weight:900; color:#0056b3; background:#f4f9fe;">1,620円</td>
+                    <td style="padding:8px 4px; border:1px solid #bcd8f5; font-size:15px; font-weight:900; color:#0056b3; background:#f4f9fe;">1,940円</td>
+                    <td style="padding:8px 2px; border:1px solid #ddd; color:#555; background:#fffcf6;">603円</td>
+                    <td style="padding:8px 2px; border:1px solid #ddd; font-weight:bold; color:#27ae60; background:#f6fbf7;">+387円</td>
+                    <td style="padding:8px 2px; border:1px solid #ddd; color:#555; background:#fffcf6;">798円</td>
+                    <td style="padding:8px 2px; border:1px solid #ddd; font-weight:bold; color:#27ae60; background:#f6fbf7;">+512円</td>
                 </tr>
                 <tr>
-                    <td style="padding:6px; border:1px solid #ddd; font-weight:bold;">九州</td>
-                    <td style="padding:6px; border:1px solid #ddd; text-align:left; font-size:12px;">福岡 佐賀 長崎 熊本 大分 宮崎 鹿児島</td>
-                    <td style="padding:6px; border:1px solid #ddd;">990円</td>
-                    <td style="padding:6px; border:1px solid #ddd; font-weight:bold; color:#0056b3; background:#f8fbfe;">603円</td>
-                    <td style="padding:6px; border:1px solid #ddd;">1,310円</td>
-                    <td style="padding:6px; border:1px solid #ddd; font-weight:bold; color:#0056b3; background:#f8fbfe;">798円</td>
-                    <td style="padding:6px; border:1px solid #ddd;">1,620円</td>
-                    <td style="padding:6px; border:1px solid #ddd;">1,940円</td>
+                    <td style="padding:8px 4px; border:1px solid #ddd; font-weight:bold; font-size:14px; background:#f9f9f9;">九州</td>
+                    <td style="padding:8px 6px; border:1px solid #ddd; text-align:left; font-size:11.5px;">福岡 佐賀 長崎 熊本 大分 宮崎 鹿児島</td>
+                    <td style="padding:8px 4px; border:1px solid #bcd8f5; font-size:16px; font-weight:900; color:#0056b3; background:#f4f9fe;">990円</td>
+                    <td style="padding:8px 4px; border:1px solid #bcd8f5; font-size:16px; font-weight:900; color:#0056b3; background:#f4f9fe;">1,310円</td>
+                    <td style="padding:8px 4px; border:1px solid #bcd8f5; font-size:15px; font-weight:900; color:#0056b3; background:#f4f9fe;">1,620円</td>
+                    <td style="padding:8px 4px; border:1px solid #bcd8f5; font-size:15px; font-weight:900; color:#0056b3; background:#f4f9fe;">1,940円</td>
+                    <td style="padding:8px 2px; border:1px solid #ddd; color:#555; background:#fffcf6;">603円</td>
+                    <td style="padding:8px 2px; border:1px solid #ddd; font-weight:bold; color:#27ae60; background:#f6fbf7;">+387円</td>
+                    <td style="padding:8px 2px; border:1px solid #ddd; color:#555; background:#fffcf6;">798円</td>
+                    <td style="padding:8px 2px; border:1px solid #ddd; font-weight:bold; color:#27ae60; background:#f6fbf7;">+512円</td>
                 </tr>
                 <tr>
-                    <td style="padding:6px; border:1px solid #ddd; font-weight:bold;">東北</td>
-                    <td style="padding:6px; border:1px solid #ddd; text-align:left; font-size:12px;">青森 岩手 宮城 秋田 山形 福島</td>
-                    <td style="padding:6px; border:1px solid #ddd;">1,150円</td>
-                    <td style="padding:6px; border:1px solid #ddd; font-weight:bold; color:#0056b3; background:#f8fbfe;">700円</td>
-                    <td style="padding:6px; border:1px solid #ddd;">1,440円</td>
-                    <td style="padding:6px; border:1px solid #ddd; font-weight:bold; color:#0056b3; background:#f8fbfe;">877円</td>
-                    <td style="padding:6px; border:1px solid #ddd;">1,780円</td>
-                    <td style="padding:6px; border:1px solid #ddd;">2,080円</td>
+                    <td style="padding:8px 4px; border:1px solid #ddd; font-weight:bold; font-size:14px; background:#f9f9f9;">東北</td>
+                    <td style="padding:8px 6px; border:1px solid #ddd; text-align:left; font-size:11.5px;">青森 岩手 宮城 秋田 山形 福島</td>
+                    <td style="padding:8px 4px; border:1px solid #bcd8f5; font-size:16px; font-weight:900; color:#0056b3; background:#f4f9fe;">1,150円</td>
+                    <td style="padding:8px 4px; border:1px solid #bcd8f5; font-size:16px; font-weight:900; color:#0056b3; background:#f4f9fe;">1,440円</td>
+                    <td style="padding:8px 4px; border:1px solid #bcd8f5; font-size:15px; font-weight:900; color:#0056b3; background:#f4f9fe;">1,780円</td>
+                    <td style="padding:8px 4px; border:1px solid #bcd8f5; font-size:15px; font-weight:900; color:#0056b3; background:#f4f9fe;">2,080円</td>
+                    <td style="padding:8px 2px; border:1px solid #ddd; color:#555; background:#fffcf6;">700円</td>
+                    <td style="padding:8px 2px; border:1px solid #ddd; font-weight:bold; color:#27ae60; background:#f6fbf7;">+450円</td>
+                    <td style="padding:8px 2px; border:1px solid #ddd; color:#555; background:#fffcf6;">877円</td>
+                    <td style="padding:8px 2px; border:1px solid #ddd; font-weight:bold; color:#27ae60; background:#f6fbf7;">+563円</td>
                 </tr>
                 <tr>
-                    <td style="padding:6px; border:1px solid #ddd; font-weight:bold;">沖縄</td>
-                    <td style="padding:6px; border:1px solid #ddd; text-align:left;">沖縄</td>
-                    <td style="padding:6px; border:1px solid #ddd;">1,450円</td>
-                    <td style="padding:6px; border:1px solid #ddd; font-weight:bold; color:#0056b3; background:#f8fbfe;">883円</td>
-                    <td style="padding:6px; border:1px solid #ddd;">1,810円</td>
-                    <td style="padding:6px; border:1px solid #ddd; font-weight:bold; color:#0056b3; background:#f8fbfe;">1,236円</td>
-                    <td style="padding:6px; border:1px solid #ddd;">2,160円</td>
-                    <td style="padding:6px; border:1px solid #ddd;">2,490円</td>
+                    <td style="padding:8px 4px; border:1px solid #ddd; font-weight:bold; font-size:14px; background:#f9f9f9;">沖縄</td>
+                    <td style="padding:8px 6px; border:1px solid #ddd; text-align:left; font-size:11.5px;">沖縄</td>
+                    <td style="padding:8px 4px; border:1px solid #bcd8f5; font-size:16px; font-weight:900; color:#0056b3; background:#f4f9fe;">1,450円</td>
+                    <td style="padding:8px 4px; border:1px solid #bcd8f5; font-size:16px; font-weight:900; color:#0056b3; background:#f4f9fe;">1,810円</td>
+                    <td style="padding:8px 4px; border:1px solid #bcd8f5; font-size:15px; font-weight:900; color:#0056b3; background:#f4f9fe;">2,160円</td>
+                    <td style="padding:8px 4px; border:1px solid #bcd8f5; font-size:15px; font-weight:900; color:#0056b3; background:#f4f9fe;">2,490円</td>
+                    <td style="padding:8px 2px; border:1px solid #ddd; color:#555; background:#fffcf6;">883円</td>
+                    <td style="padding:8px 2px; border:1px solid #ddd; font-weight:bold; color:#27ae60; background:#f6fbf7;">+567円</td>
+                    <td style="padding:8px 2px; border:1px solid #ddd; color:#555; background:#fffcf6;">1,236円</td>
+                    <td style="padding:8px 2px; border:1px solid #ddd; font-weight:bold; color:#27ae60; background:#f6fbf7;">+574円</td>
                 </tr>
                 <tr>
-                    <td style="padding:6px; border:1px solid #ddd; font-weight:bold;">北海道</td>
-                    <td style="padding:6px; border:1px solid #ddd; text-align:left;">北海道</td>
-                    <td style="padding:6px; border:1px solid #ddd;">1,740円</td>
-                    <td style="padding:6px; border:1px solid #ddd; font-weight:bold; color:#0056b3; background:#f8fbfe;">1,244円</td>
-                    <td style="padding:6px; border:1px solid #ddd;">2,040円</td>
-                    <td style="padding:6px; border:1px solid #ddd; font-weight:bold; color:#0056b3; background:#f8fbfe;">1,466円</td>
-                    <td style="padding:6px; border:1px solid #ddd;">2,350円</td>
-                    <td style="padding:6px; border:1px solid #ddd;">2,650円</td>
+                    <td style="padding:8px 4px; border:1px solid #ddd; font-weight:bold; font-size:14px; background:#f9f9f9;">北海道</td>
+                    <td style="padding:8px 6px; border:1px solid #ddd; text-align:left; font-size:11.5px;">北海道</td>
+                    <td style="padding:8px 4px; border:1px solid #bcd8f5; font-size:16px; font-weight:900; color:#0056b3; background:#f4f9fe;">1,740円</td>
+                    <td style="padding:8px 4px; border:1px solid #bcd8f5; font-size:16px; font-weight:900; color:#0056b3; background:#f4f9fe;">2,040円</td>
+                    <td style="padding:8px 4px; border:1px solid #bcd8f5; font-size:15px; font-weight:900; color:#0056b3; background:#f4f9fe;">2,350円</td>
+                    <td style="padding:8px 4px; border:1px solid #bcd8f5; font-size:15px; font-weight:900; color:#0056b3; background:#f4f9fe;">2,650円</td>
+                    <td style="padding:8px 2px; border:1px solid #ddd; color:#555; background:#fffcf6;">1,244円</td>
+                    <td style="padding:8px 2px; border:1px solid #ddd; font-weight:bold; color:#27ae60; background:#f6fbf7;">+496円</td>
+                    <td style="padding:8px 2px; border:1px solid #ddd; color:#555; background:#fffcf6;">1,466円</td>
+                    <td style="padding:8px 2px; border:1px solid #ddd; font-weight:bold; color:#27ae60; background:#f6fbf7;">+574円</td>
                 </tr>
             </tbody>
         </table>
-        <div style="font-size:12px; color:#666; margin-top:4px;">※ゆうパック：兵庫発（契約運賃は1点あたり60円引き適用済み）</div>
     </div>
     """
     st.markdown(youpack_html, unsafe_allow_html=True)
