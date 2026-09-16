@@ -6,7 +6,7 @@ from openpyxl.utils import get_column_letter
 
 st.set_page_config(page_title="出荷ファイル自動整形Webシステム", layout="wide")
 st.title("📦 出荷ファイル自動整形Webシステム")
-st.caption("メルカリ用（A,G,J,P非表示・E/F列幅調整済Excel）とゆうプリR用（CSV）を自動判別し、sy・sy以外に仕分けて出力します。")
+st.caption("メルカリ用（原本通り非表示・列幅設定済Excel）とゆうプリR用（CSV）を自動判別し、sy・sy以外に仕分けて出力します。")
 
 st.subheader("1. CSVファイルのアップロード")
 uploaded_files = st.file_uploader(
@@ -16,27 +16,32 @@ uploaded_files = st.file_uploader(
 )
 
 def create_formatted_excel(dataframe):
-    """メルカリ用データ：全列を保持しつつ A,G,J,P非表示 & E,F列幅を調整したExcelを生成"""
+    """原本Excelの非表示列（A-D, G-H, J-N, P-Z）と列幅（E, F）を完全再現"""
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         dataframe.to_excel(writer, index=False, sheet_name="Sheet1")
         worksheet = writer.sheets["Sheet1"]
 
-        # 非表示対象の列
-        hide_cols = ["order_id", "quantity", "product_tax", "shipping_duration"]
+        # 原本で非表示になっている列インデックス（1始まり）
+        # A-D(1-4), G-H(7-8), J-N(10-14), P-Z(16-26)
+        hidden_indices = set(list(range(1, 5)) + list(range(7, 9)) + list(range(10, 15)) + list(range(16, 27)))
 
-        for idx, col_name in enumerate(dataframe.columns, 1):
+        for idx in range(1, len(dataframe.columns) + 1):
             col_letter = get_column_letter(idx)
+            dim = worksheet.column_dimensions[col_letter]
             
-            if col_name in hide_cols:
-                worksheet.column_dimensions[col_letter].hidden = True
-                worksheet.column_dimensions[col_letter].width = 0
-            elif col_name == "original_product_id" or col_letter == "E":
-                worksheet.column_dimensions[col_letter].width = 16.125
-            elif col_name == "product_name" or col_letter == "F":
-                worksheet.column_dimensions[col_letter].width = 69.5
+            if idx in hidden_indices:
+                dim.hidden = True
+                dim.width = 0
+            elif col_letter == "E":
+                dim.hidden = False
+                dim.width = 16.125
+            elif col_letter == "F":
+                dim.hidden = False
+                dim.width = 69.5
             else:
-                worksheet.column_dimensions[col_letter].width = 15
+                dim.hidden = False
+                dim.width = 13.0
 
     return output.getvalue()
 
