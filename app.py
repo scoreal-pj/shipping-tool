@@ -4,12 +4,12 @@ import io
 
 st.set_page_config(page_title="出荷ファイル自動整形Webシステム", layout="wide")
 st.title("📦 出荷ファイル自動整形Webシステム")
-st.caption("ブラウザ上で元データを読み込み、チェックボックスで担当者を選ぶだけで、不要な行の非表示・整形を自動で行います。")
+st.caption("元データCSVをまとめて投入し、担当者ごとに整形して出力します。")
 
-# 1. 元データのアップロード（複数ファイルを許可してエラーを排除）
+# 1. 複数ファイルをまとめて受け付ける設定
 st.subheader("1. 元データのアップロード")
 uploaded_files = st.file_uploader(
-    "メルカリ等の売却済みデータ CSV (複数選択・ドラッグ可)",
+    "メルカリ等の売却済みデータ CSV (2つ以上まとめて選択・ドラッグ可能)",
     type=["csv"],
     accept_multiple_files=True
 )
@@ -25,14 +25,15 @@ if uploaded_files:
                 f.seek(0)
                 df_temp = pd.read_csv(f, encoding="utf-8")
             dfs.append(df_temp)
-        except Exception:
-            continue
+        except Exception as e:
+            st.error(f"ファイル読み込みエラー ({f.name}): {e}")
 
     if dfs:
-        df = pd.concat(dfs, ignore_index=True).drop_duplicates()
-        st.success(f"ファイルを正常に読み込みました（全 {len(df)} 件）")
+        # 複数ファイルを1つに全件合体
+        df = pd.concat(dfs, ignore_index=True)
+        st.success(f"アップロードされた全 {len(dfs)} ファイル（合計 {len(df)} 行）を正常に結合しました。")
 
-        # 識別カラムの探索
+        # 担当者カラムの判定
         target_col = None
         for col in ["original_product_id", "商品管理番号", "管理番号"]:
             if col in df.columns:
@@ -40,12 +41,10 @@ if uploaded_files:
                 break
 
         if target_col:
-            st.caption(f"データ内の識別カラム： {target_col}")
+            st.caption(f"識別カラム： {target_col}")
 
-            # 2. 残す担当者の選択
+            # 2. 担当者の選択
             st.subheader("2. 残す担当者の選択")
-            st.write("チェックを入れた担当者のデータのみを残し、他を自動で非表示（除外）します。")
-
             col1, col2, col3, col4 = st.columns(4)
             with col1:
                 chk_ami = st.checkbox("担当: ami", value=True)
@@ -62,7 +61,7 @@ if uploaded_files:
             if chk_mb: selected_tags.append("mb")
             if chk_sy: selected_tags.append("sy")
 
-            # 3. 処理の実行
+            # 3. 整形とダウンロード
             st.subheader("3. 処理の実行")
             if st.button("整形データを生成する", type="primary"):
                 if not selected_tags:
@@ -70,14 +69,15 @@ if uploaded_files:
                 else:
                     pattern = "|".join(selected_tags)
                     filtered_df = df[df[target_col].astype(str).str.contains(pattern, case=False, na=False)]
-
-                    st.write(f"抽出結果: {len(filtered_df)} 件")
+                    
+                    st.write(f"抽出完了: {len(filtered_df)} 件 (全ファイル結合後)")
                     st.dataframe(filtered_df)
 
+                    # ダウンロード用バッファ
                     csv_buffer = io.BytesIO()
                     filtered_df.to_csv(csv_buffer, index=False, encoding="cp932", errors="replace")
                     st.download_button(
-                        label="整形済みCSVをダウンロード",
+                        label="2ファイル結合済み 整形CSVをダウンロード",
                         data=csv_buffer.getvalue(),
                         file_name="shipping_formatted.csv",
                         mime="text/csv"
