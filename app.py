@@ -118,11 +118,10 @@ if menu == "📦 出荷CSV整形":
                 st.error(f"`{f.name}` 内に判定用列が見つかりませんでした。")
 
 # ==========================================
-# 2. ゆうびん後納計算機能
+# 2. ゆうびん後納計算機能（個数・合計強調型）
 # ==========================================
 elif menu == "📮 ゆうびん後納計算":
     st.title("📮 ゆうびん後納計算（ゆうパケット）")
-    st.caption("数字を入力して改行（Enter）で追加。BackSpaceで自由に修正・削除できます。")
 
     def parse_textarea_numbers(text_val):
         if not text_val:
@@ -132,26 +131,23 @@ elif menu == "📮 ゆうびん後納計算":
 
     col1, col2, col3 = st.columns(3)
 
-    # 1cm
     with col1:
         st.markdown("### 1cm")
-        txt_1cm = st.text_area("個数入力", height=130, placeholder="例:\n12\n9\n14", key="area_1cm", label_visibility="collapsed")
-        sum_1cm, list_1cm = parse_textarea_numbers(txt_1cm)
-        st.markdown(f"**合計: {sum_1cm} 通**")
+        txt_1cm = st.text_area("個数入力", height=120, placeholder="例:\n12\n9\n14", key="area_1cm", label_visibility="collapsed")
+        sum_1cm, _ = parse_textarea_numbers(txt_1cm)
+        st.markdown(f"<div style='font-size:18px; font-weight:bold; color:#0056b3;'>合計: {sum_1cm} 通</div>", unsafe_allow_html=True)
 
-    # 2cm
     with col2:
         st.markdown("### 2cm")
-        txt_2cm = st.text_area("個数入力", height=130, placeholder="例:\n5\n4", key="area_2cm", label_visibility="collapsed")
-        sum_2cm, list_2cm = parse_textarea_numbers(txt_2cm)
-        st.markdown(f"**合計: {sum_2cm} 通**")
+        txt_2cm = st.text_area("個数入力", height=120, placeholder="例:\n5\n4", key="area_2cm", label_visibility="collapsed")
+        sum_2cm, _ = parse_textarea_numbers(txt_2cm)
+        st.markdown(f"<div style='font-size:18px; font-weight:bold; color:#0056b3;'>合計: {sum_2cm} 通</div>", unsafe_allow_html=True)
 
-    # 3cm
     with col3:
         st.markdown("### 3cm")
-        txt_3cm = st.text_area("個数入力", height=130, placeholder="例:\n2\n1", key="area_3cm", label_visibility="collapsed")
-        sum_3cm, list_3cm = parse_textarea_numbers(txt_3cm)
-        st.markdown(f"**合計: {sum_3cm} 通**")
+        txt_3cm = st.text_area("個数入力", height=120, placeholder="例:\n2\n1", key="area_3cm", label_visibility="collapsed")
+        sum_3cm, _ = parse_textarea_numbers(txt_3cm)
+        st.markdown(f"<div style='font-size:18px; font-weight:bold; color:#0056b3;'>合計: {sum_3cm} 通</div>", unsafe_allow_html=True)
 
     # 金額計算
     tot_1cm = sum_1cm * 173
@@ -161,20 +157,73 @@ elif menu == "📮 ゆうびん後納計算":
     all_cnt = sum_1cm + sum_2cm + sum_3cm
     all_tot = tot_1cm + tot_2cm + tot_3cm
 
-    # サマリー表示
+    # ----------------------------------------------------
+    # 最重要サマリー表示（特大フォント＆カラー強調）
+    # ----------------------------------------------------
     st.markdown("---")
-    m1, m2 = st.columns(2)
-    m1.metric("総個数", f"{all_cnt} 通")
-    m2.metric("後納運賃 合計", f"{all_tot:,} 円")
+    summary_html = f"""
+    <div style="display:flex; gap:20px; margin-bottom:15px;">
+        <div style="flex:1; background:#f0f7ff; border:2px solid #0066cc; border-radius:10px; padding:16px 20px; text-align:center;">
+            <div style="font-size:15px; color:#555; font-weight:bold; margin-bottom:5px;">📮 総 個 数</div>
+            <div style="font-size:36px; font-weight:900; color:#0056b3;">{all_cnt:,} <span style="font-size:18px; font-weight:normal;">通</span></div>
+        </div>
+        <div style="flex:1; background:#fff8ee; border:2px solid #e67e22; border-radius:10px; padding:16px 20px; text-align:center;">
+            <div style="font-size:15px; color:#555; font-weight:bold; margin-bottom:5px;">💰 合計（後納運賃）</div>
+            <div style="font-size:36px; font-weight:900; color:#d35400;">{all_tot:,} <span style="font-size:18px; font-weight:normal;">円</span></div>
+        </div>
+    </div>
+    """
+    st.markdown(summary_html, unsafe_allow_html=True)
 
-    # 一覧表（正規料金は一番右端）
-    df_packet = pd.DataFrame([
-        {"区分": "1cm", "運賃(後納)": "173 円", "個数": f"{sum_1cm} 通", "合計(後納)": f"{tot_1cm:,} 円", "正規料金": "250 円"},
-        {"区分": "2cm", "運賃(後納)": "204 円", "個数": f"{sum_2cm} 通", "合計(後納)": f"{tot_2cm:,} 円", "正規料金": "310 円"},
-        {"区分": "3cm", "運賃(後納)": "280 円", "個数": f"{sum_3cm} 通", "合計(後納)": f"{tot_3cm:,} 円", "正規料金": "360 円"},
-        {"区分": "【合計】", "運賃(後納)": "-", "個数": f"{all_cnt} 通", "合計(後納)": f"{all_tot:,} 円", "正規料金": "-"},
-    ])
-    st.table(df_packet)
+    # ----------------------------------------------------
+    # 一覧表（個数・合計を太字・特大化・カラー背景で強調）
+    # ----------------------------------------------------
+    table_packet_html = f"""
+    <div style="width:100%; margin-bottom:25px;">
+        <table style="width:100%; border-collapse:collapse; font-size:14px; text-align:center; background:#fff;">
+            <thead>
+                <tr style="background:#f4f5f7; border-bottom:2px solid #ccc;">
+                    <th style="padding:10px 8px; border:1px solid #ddd; width:15%;">区分</th>
+                    <th style="padding:10px 8px; border:1px solid #ddd; width:15%; color:#666; font-size:12.5px;">運賃(後納)</th>
+                    <th style="padding:10px 8px; border:1px solid #0066cc; width:25%; background:#e8f4fd; color:#004085; font-size:16px; font-weight:bold;">個数</th>
+                    <th style="padding:10px 8px; border:1px solid #e67e22; width:30%; background:#fef5ea; color:#b94a00; font-size:16px; font-weight:bold;">合計（後納）</th>
+                    <th style="padding:10px 8px; border:1px solid #ddd; width:15%; color:#666; font-size:12.5px;">正規料金</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="padding:10px 8px; border:1px solid #ddd; font-weight:bold; font-size:16px;">1cm</td>
+                    <td style="padding:10px 8px; border:1px solid #ddd; color:#555;">173 円</td>
+                    <td style="padding:10px 8px; border:1px solid #0066cc; background:#f4f9fe; font-size:19px; font-weight:900; color:#0056b3;">{sum_1cm:,} 通</td>
+                    <td style="padding:10px 8px; border:1px solid #e67e22; background:#fffcf6; font-size:19px; font-weight:900; color:#c0392b;">{tot_1cm:,} 円</td>
+                    <td style="padding:10px 8px; border:1px solid #ddd; color:#777;">250 円</td>
+                </tr>
+                <tr>
+                    <td style="padding:10px 8px; border:1px solid #ddd; font-weight:bold; font-size:16px;">2cm</td>
+                    <td style="padding:10px 8px; border:1px solid #ddd; color:#555;">204 円</td>
+                    <td style="padding:10px 8px; border:1px solid #0066cc; background:#f4f9fe; font-size:19px; font-weight:900; color:#0056b3;">{sum_2cm:,} 通</td>
+                    <td style="padding:10px 8px; border:1px solid #e67e22; background:#fffcf6; font-size:19px; font-weight:900; color:#c0392b;">{tot_2cm:,} 円</td>
+                    <td style="padding:10px 8px; border:1px solid #ddd; color:#777;">310 円</td>
+                </tr>
+                <tr>
+                    <td style="padding:10px 8px; border:1px solid #ddd; font-weight:bold; font-size:16px;">3cm</td>
+                    <td style="padding:10px 8px; border:1px solid #ddd; color:#555;">280 円</td>
+                    <td style="padding:10px 8px; border:1px solid #0066cc; background:#f4f9fe; font-size:19px; font-weight:900; color:#0056b3;">{sum_3cm:,} 通</td>
+                    <td style="padding:10px 8px; border:1px solid #e67e22; background:#fffcf6; font-size:19px; font-weight:900; color:#c0392b;">{tot_3cm:,} 円</td>
+                    <td style="padding:10px 8px; border:1px solid #ddd; color:#777;">360 円</td>
+                </tr>
+                <tr style="background:#f9fafb; border-top:3px solid #666;">
+                    <td style="padding:12px 8px; border:1px solid #ccc; font-weight:900; font-size:17px;">【合計】</td>
+                    <td style="padding:12px 8px; border:1px solid #ccc; color:#888;">-</td>
+                    <td style="padding:12px 8px; border:2px solid #0066cc; background:#dbeafe; font-size:22px; font-weight:900; color:#003366;">{all_cnt:,} 通</td>
+                    <td style="padding:12px 8px; border:2px solid #e67e22; background:#fde8d0; font-size:22px; font-weight:900; color:#962d00;">{all_tot:,} 円</td>
+                    <td style="padding:12px 8px; border:1px solid #ccc; color:#888;">-</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    """
+    st.markdown(table_packet_html, unsafe_allow_html=True)
 
     # ==========================================
     # 送料早見表セクション（ゆうパック 60〜120サイズ）
@@ -184,19 +233,17 @@ elif menu == "📮 ゆうびん後納計算":
 
     youpack_html = """
     <div style="width:100%; overflow-x:auto; margin-bottom:20px;">
-        <table style="width:100%; border-collapse:collapse; font-size:12.5px; text-align:center; background:#fff;">
+        <table style="width:100%; border-collapse:collapse; font-size:13px; text-align:center; background:#fff;">
             <thead>
                 <tr style="background:#f1f3f5; border-bottom:2px solid #ccc;">
-                    <th style="padding:7px 5px; border:1px solid #ddd; width:15%;">地域</th>
-                    <th style="padding:7px 5px; border:1px solid #ddd; width:37%;">対象都道府県</th>
-                    <th style="padding:7px 4px; border:1px solid #ddd; width:7%;">60(正規)</th>
-                    <th style="padding:7px 4px; border:1px solid #ddd; width:7%; background:#e8f4fd;">60(契約)</th>
-                    <th style="padding:7px 4px; border:1px solid #ddd; width:7%;">80(正規)</th>
-                    <th style="padding:7px 4px; border:1px solid #ddd; width:7%; background:#e8f4fd;">80(契約)</th>
-                    <th style="padding:7px 4px; border:1px solid #ddd; width:8%;">100(正規)</th>
-                    <th style="padding:7px 4px; border:1px solid #ddd; width:6%; background:#f8f9fa;">100(契約)</th>
-                    <th style="padding:7px 4px; border:1px solid #ddd; width:8%;">120(正規)</th>
-                    <th style="padding:7px 4px; border:1px solid #ddd; width:6%; background:#f8f9fa;">120(契約)</th>
+                    <th style="padding:8px 6px; border:1px solid #ddd; width:16%;">地域</th>
+                    <th style="padding:8px 6px; border:1px solid #ddd; width:44%;">対象都道府県</th>
+                    <th style="padding:8px 5px; border:1px solid #ddd; width:9%;">60(正規)</th>
+                    <th style="padding:8px 5px; border:1px solid #ddd; width:9%; background:#e8f4fd;">60(契約)</th>
+                    <th style="padding:8px 5px; border:1px solid #ddd; width:9%;">80(正規)</th>
+                    <th style="padding:8px 5px; border:1px solid #ddd; width:9%; background:#e8f4fd;">80(契約)</th>
+                    <th style="padding:8px 5px; border:1px solid #ddd; width:9%;">100(正規)</th>
+                    <th style="padding:8px 5px; border:1px solid #ddd; width:9%;">120(正規)</th>
                 </tr>
             </thead>
             <tbody>
@@ -208,57 +255,47 @@ elif menu == "📮 ゆうびん後納計算":
                     <td style="padding:6px; border:1px solid #ddd;">1,130円</td>
                     <td style="padding:6px; border:1px solid #ddd; font-weight:bold; color:#0056b3; background:#f8fbfe;">688円</td>
                     <td style="padding:6px; border:1px solid #ddd;">1,450円</td>
-                    <td style="padding:6px; border:1px solid #ddd; color:#888;">-</td>
                     <td style="padding:6px; border:1px solid #ddd;">1,770円</td>
-                    <td style="padding:6px; border:1px solid #ddd; color:#888;">-</td>
                 </tr>
                 <tr>
                     <td style="padding:6px; border:1px solid #ddd; font-weight:bold;">北陸・東海<br>近畿・中国・四国</td>
-                    <td style="padding:6px; border:1px solid #ddd; text-align:left; font-size:11.5px;">富山 石川 福井 / 静岡 愛知 岐阜 三重<br>大阪 京都 奈良 滋賀 和歌山 / 岡山 広島 鳥取 島根 山口<br>徳島 香川 愛媛 高知</td>
+                    <td style="padding:6px; border:1px solid #ddd; text-align:left; font-size:12px;">富山 石川 福井 / 静岡 愛知 岐阜 三重<br>大阪 京都 奈良 滋賀 和歌山 / 岡山 広島 鳥取 島根 山口<br>徳島 香川 愛媛 高知</td>
                     <td style="padding:6px; border:1px solid #ddd;">880円</td>
                     <td style="padding:6px; border:1px solid #ddd; font-weight:bold; color:#0056b3; background:#f8fbfe;">536円</td>
                     <td style="padding:6px; border:1px solid #ddd;">1,200円</td>
                     <td style="padding:6px; border:1px solid #ddd; font-weight:bold; color:#0056b3; background:#f8fbfe;">731円</td>
                     <td style="padding:6px; border:1px solid #ddd;">1,500円</td>
-                    <td style="padding:6px; border:1px solid #ddd; color:#888;">-</td>
                     <td style="padding:6px; border:1px solid #ddd;">1,830円</td>
-                    <td style="padding:6px; border:1px solid #ddd; color:#888;">-</td>
                 </tr>
                 <tr>
                     <td style="padding:6px; border:1px solid #ddd; font-weight:bold;">関東・信越</td>
-                    <td style="padding:6px; border:1px solid #ddd; text-align:left; font-size:11.5px;">茨城 栃木 群馬 埼玉 千葉 東京 神奈川 山梨 / 新潟 長野</td>
+                    <td style="padding:6px; border:1px solid #ddd; text-align:left; font-size:12px;">茨城 栃木 群馬 埼玉 千葉 東京 神奈川 山梨 / 新潟 長野</td>
                     <td style="padding:6px; border:1px solid #ddd;">990円</td>
                     <td style="padding:6px; border:1px solid #ddd; font-weight:bold; color:#0056b3; background:#f8fbfe;">603円</td>
                     <td style="padding:6px; border:1px solid #ddd;">1,310円</td>
                     <td style="padding:6px; border:1px solid #ddd; font-weight:bold; color:#0056b3; background:#f8fbfe;">798円</td>
                     <td style="padding:6px; border:1px solid #ddd;">1,620円</td>
-                    <td style="padding:6px; border:1px solid #ddd; color:#888;">-</td>
                     <td style="padding:6px; border:1px solid #ddd;">1,940円</td>
-                    <td style="padding:6px; border:1px solid #ddd; color:#888;">-</td>
                 </tr>
                 <tr>
                     <td style="padding:6px; border:1px solid #ddd; font-weight:bold;">九州</td>
-                    <td style="padding:6px; border:1px solid #ddd; text-align:left; font-size:11.5px;">福岡 佐賀 長崎 熊本 大分 宮崎 鹿児島</td>
+                    <td style="padding:6px; border:1px solid #ddd; text-align:left; font-size:12px;">福岡 佐賀 長崎 熊本 大分 宮崎 鹿児島</td>
                     <td style="padding:6px; border:1px solid #ddd;">990円</td>
                     <td style="padding:6px; border:1px solid #ddd; font-weight:bold; color:#0056b3; background:#f8fbfe;">603円</td>
                     <td style="padding:6px; border:1px solid #ddd;">1,310円</td>
                     <td style="padding:6px; border:1px solid #ddd; font-weight:bold; color:#0056b3; background:#f8fbfe;">798円</td>
                     <td style="padding:6px; border:1px solid #ddd;">1,620円</td>
-                    <td style="padding:6px; border:1px solid #ddd; color:#888;">-</td>
                     <td style="padding:6px; border:1px solid #ddd;">1,940円</td>
-                    <td style="padding:6px; border:1px solid #ddd; color:#888;">-</td>
                 </tr>
                 <tr>
                     <td style="padding:6px; border:1px solid #ddd; font-weight:bold;">東北</td>
-                    <td style="padding:6px; border:1px solid #ddd; text-align:left; font-size:11.5px;">青森 岩手 宮城 秋田 山形 福島</td>
+                    <td style="padding:6px; border:1px solid #ddd; text-align:left; font-size:12px;">青森 岩手 宮城 秋田 山形 福島</td>
                     <td style="padding:6px; border:1px solid #ddd;">1,150円</td>
                     <td style="padding:6px; border:1px solid #ddd; font-weight:bold; color:#0056b3; background:#f8fbfe;">700円</td>
                     <td style="padding:6px; border:1px solid #ddd;">1,440円</td>
                     <td style="padding:6px; border:1px solid #ddd; font-weight:bold; color:#0056b3; background:#f8fbfe;">877円</td>
                     <td style="padding:6px; border:1px solid #ddd;">1,780円</td>
-                    <td style="padding:6px; border:1px solid #ddd; color:#888;">-</td>
                     <td style="padding:6px; border:1px solid #ddd;">2,080円</td>
-                    <td style="padding:6px; border:1px solid #ddd; color:#888;">-</td>
                 </tr>
                 <tr>
                     <td style="padding:6px; border:1px solid #ddd; font-weight:bold;">沖縄</td>
@@ -268,9 +305,7 @@ elif menu == "📮 ゆうびん後納計算":
                     <td style="padding:6px; border:1px solid #ddd;">1,810円</td>
                     <td style="padding:6px; border:1px solid #ddd; font-weight:bold; color:#0056b3; background:#f8fbfe;">1,236円</td>
                     <td style="padding:6px; border:1px solid #ddd;">2,160円</td>
-                    <td style="padding:6px; border:1px solid #ddd; color:#888;">-</td>
                     <td style="padding:6px; border:1px solid #ddd;">2,490円</td>
-                    <td style="padding:6px; border:1px solid #ddd; color:#888;">-</td>
                 </tr>
                 <tr>
                     <td style="padding:6px; border:1px solid #ddd; font-weight:bold;">北海道</td>
@@ -280,13 +315,11 @@ elif menu == "📮 ゆうびん後納計算":
                     <td style="padding:6px; border:1px solid #ddd;">2,040円</td>
                     <td style="padding:6px; border:1px solid #ddd; font-weight:bold; color:#0056b3; background:#f8fbfe;">1,466円</td>
                     <td style="padding:6px; border:1px solid #ddd;">2,350円</td>
-                    <td style="padding:6px; border:1px solid #ddd; color:#888;">-</td>
                     <td style="padding:6px; border:1px solid #ddd;">2,650円</td>
-                    <td style="padding:6px; border:1px solid #ddd; color:#888;">-</td>
                 </tr>
             </tbody>
         </table>
-        <div style="font-size:11.5px; color:#666; margin-top:4px;">※ゆうパック：兵庫発（契約運賃は1点あたり60円引き適用済み／未契約区分は「-」表示）</div>
+        <div style="font-size:12px; color:#666; margin-top:4px;">※ゆうパック：兵庫発（契約運賃は1点あたり60円引き適用済み）</div>
     </div>
     """
     st.markdown(youpack_html, unsafe_allow_html=True)
