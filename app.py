@@ -118,133 +118,84 @@ if menu == "📦 出荷CSV整形":
                 st.error(f"`{f.name}` 内に判定用列が見つかりませんでした。")
 
 # ==========================================
-# 2. ゆうびん後納計算機能（エクセルの完全再現）
+# 2. ゆうびん後納計算機能
 # ==========================================
 elif menu == "📮 ゆうびん後納計算":
-    st.title("📮 ゆうびん後納計算システム")
-    st.caption("エクセルの計算式に基づき、通数・小計・合計・正規料金・粗利を自動計算します。")
+    st.title("📮 ゆうびん後納計算（ゆうパケット）")
+    st.caption("1cm / 2cm / 3cm の個数を入力すると、後納運賃・正規料金および各合計を自動計算します。")
 
-    tab1, tab2 = st.tabs(["📦 パケット専用（粗利計算）", "📑 メール・パケット・定形外（総合）"])
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        p_cnt_1cm = st.number_input("1cm 個数 (後納173円 / 正規250円)", min_value=0, value=0, step=1, key="p1")
+    with col2:
+        p_cnt_2cm = st.number_input("2cm 個数 (後納204円 / 正規310円)", min_value=0, value=0, step=1, key="p2")
+    with col3:
+        p_cnt_3cm = st.number_input("3cm 個数 (後納280円 / 正規360円)", min_value=0, value=0, step=1, key="p3")
 
-    # ----------------------------------------------------
-    # タブ1: パケット専用（シート「パケット」の再現）
-    # ----------------------------------------------------
-    with tab1:
-        st.subheader("ゆうパケット 運賃・粗利計算")
-        st.write("個数を入力すると合計運賃と正規料金との差額（粗利）が自動計算されます。")
+    # 計算
+    tot_1cm = p_cnt_1cm * 173
+    reg_1cm = p_cnt_1cm * 250
 
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            p_cnt_1cm = st.number_input("1cm 個数 (後納173円 / 正規250円)", min_value=0, value=0, step=1, key="p1")
-        with col2:
-            p_cnt_2cm = st.number_input("2cm 個数 (後納204円 / 正規310円)", min_value=0, value=0, step=1, key="p2")
-        with col3:
-            p_cnt_3cm = st.number_input("3cm 個数 (後納280円 / 正規360円)", min_value=0, value=0, step=1, key="p3")
+    tot_2cm = p_cnt_2cm * 204
+    reg_2cm = p_cnt_2cm * 310
 
-        # 計算
-        tot_1cm = p_cnt_1cm * 173
-        reg_1cm = p_cnt_1cm * 250
-        prof_1cm = reg_1cm - tot_1cm
+    tot_3cm = p_cnt_3cm * 280
+    reg_3cm = p_cnt_3cm * 360
 
-        tot_2cm = p_cnt_2cm * 204
-        reg_2cm = p_cnt_2cm * 310
-        prof_2cm = reg_2cm - tot_2cm
+    all_cnt = p_cnt_1cm + p_cnt_2cm + p_cnt_3cm
+    all_tot = tot_1cm + tot_2cm + tot_3cm
+    all_reg = reg_1cm + reg_2cm + reg_3cm
 
-        tot_3cm = p_cnt_3cm * 280
-        reg_3cm = p_cnt_3cm * 360
-        prof_3cm = reg_3cm - tot_3cm
+    # サマリー表示
+    st.markdown("---")
+    m1, m2, m3 = st.columns(3)
+    m1.metric("合計個数", f"{all_cnt} 通")
+    m2.metric("後納運賃 合計", f"{all_tot:,} 円")
+    m3.metric("正規料金 合計", f"{all_reg:,} 円")
 
-        all_cnt = p_cnt_1cm + p_cnt_2cm + p_cnt_3cm
-        all_tot = tot_1cm + tot_2cm + tot_3cm
-        all_prof = prof_1cm + prof_2cm + prof_3cm
+    # 計算結果一覧表
+    df_packet = pd.DataFrame([
+        {"区分": "1cm", "運賃(後納)": "173 円", "個数": f"{p_cnt_1cm} 通", "合計(後納)": f"{tot_1cm:,} 円", "正規料金": "250 円", "正規合計": f"{reg_1cm:,} 円"},
+        {"区分": "2cm", "運賃(後納)": "204 円", "個数": f"{p_cnt_2cm} 通", "合計(後納)": f"{tot_2cm:,} 円", "正規料金": "310 円", "正規合計": f"{reg_2cm:,} 円"},
+        {"区分": "3cm", "運賃(後納)": "280 円", "個数": f"{p_cnt_3cm} 通", "合計(後納)": f"{tot_3cm:,} 円", "正規料金": "360 円", "正規合計": f"{reg_3cm:,} 円"},
+        {"区分": "【合計】", "運賃(後納)": "-", "個数": f"{all_cnt} 通", "合計(後納)": f"{all_tot:,} 円", "正規料金": "-", "正規合計": f"{all_reg:,} 円"},
+    ])
+    st.dataframe(df_packet, use_container_width=True, hide_index=True)
 
-        # サマリーカード表示
-        m1, m2, m3 = st.columns(3)
-        m1.metric("総個数", f"{all_cnt} 個")
-        m2.metric("後納運賃合計", f"{all_tot:,} 円")
-        m3.metric("粗利合計", f"{all_prof:,} 円")
+    # ==========================================
+    # 送料早見表の参照セクション
+    # ==========================================
+    st.markdown("---")
+    with st.expander("📋 【送料早見表】ゆうパック・レターパック・集荷時間（クリックで開閉）", expanded=True):
+        col_yp, col_other = st.columns([3, 2])
 
-        # 詳細テーブル
-        df_packet = pd.DataFrame([
-            {"区分": "1cm", "運賃": 173, "個数": p_cnt_1cm, "合計": tot_1cm, "正規料金": 250, "正規合計": reg_1cm, "粗利": prof_1cm},
-            {"区分": "2cm", "運賃": 204, "個数": p_cnt_2cm, "合計": tot_2cm, "正規料金": 310, "正規合計": reg_2cm, "粗利": prof_2cm},
-            {"区分": "3cm", "運賃": 280, "個数": p_cnt_3cm, "合計": tot_3cm, "正規料金": 360, "正規合計": reg_3cm, "粗利": prof_3cm},
-            {"区分": "【合計】", "運賃": "-", "個数": all_cnt, "合計": all_tot, "正規料金": "-", "正規合計": reg_1cm + reg_2cm + reg_3cm, "粗利": all_prof},
-        ])
-        st.dataframe(df_packet, use_container_width=True, hide_index=True)
-
-    # ----------------------------------------------------
-    # タブ2: メール・パケット・定形外（総合集計シートの再現）
-    # ----------------------------------------------------
-    with tab2:
-        st.subheader("メール・パケット・定形外 総合計算")
-        
-        c_mail, c_pack, c_teikei = st.columns(3)
-
-        # ゆうメール
-        with c_mail:
-            st.markdown("#### ✉️ ゆうメール")
-            m_500 = st.number_input("500g (136円)", min_value=0, value=0, step=1, key="m_500")
-            m_1k = st.number_input("1kg (193円)", min_value=0, value=0, step=1, key="m_1k")
-            m_2k = st.number_input("2kg (286円)", min_value=0, value=0, step=1, key="m_2k")
-            m_3k = st.number_input("3kg (422円)", min_value=0, value=0, step=1, key="m_3k")
-
-        # ゆうパケット
-        with c_pack:
-            st.markdown("#### 📦 ゆうパケット")
-            pk_1 = st.number_input("1cm (173円)", min_value=0, value=0, step=1, key="pk_1")
-            pk_2 = st.number_input("2cm (204円)", min_value=0, value=0, step=1, key="pk_2")
-            pk_3 = st.number_input("3cm (280円)", min_value=0, value=0, step=1, key="pk_3")
-
-        # 定形外
-        with c_teikei:
-            st.markdown("#### 📮 定形外")
-            t_510 = st.number_input("510円", min_value=0, value=0, step=1, key="t_510")
-            t_350 = st.number_input("350円", min_value=0, value=0, step=1, key="t_350")
-            t_220 = st.number_input("220円", min_value=0, value=0, step=1, key="t_220")
-
-        # 計算
-        sub_m = (m_500 * 136) + (m_1k * 193) + (m_2k * 286) + (m_3k * 422)
-        cnt_m = m_500 + m_1k + m_2k + m_3k
-
-        sub_pk = (pk_1 * 173) + (pk_2 * 204) + (pk_3 * 280)
-        cnt_pk = pk_1 + pk_2 + pk_3
-
-        sub_t = (t_510 * 510) + (t_350 * 350) + (t_220 * 220)
-        cnt_t = t_510 + t_350 + t_220
-
-        grand_cnt = cnt_m + cnt_pk + cnt_t
-        grand_total = sub_m + sub_pk + sub_t
-
-        st.markdown("---")
-        st.markdown("### 📊 総合計")
-        g1, g2, g3, g4 = st.columns(4)
-        g1.metric("ゆうメール小計", f"{cnt_m} 個 / {sub_m:,} 円")
-        g2.metric("ゆうパケット小計", f"{cnt_pk} 個 / {sub_pk:,} 円")
-        g3.metric("定形外小計", f"{cnt_t} 個 / {sub_t:,} 円")
-        g4.metric("総計（総合計）", f"{grand_cnt} 個 / {grand_total:,} 円")
-
-        # 計算結果Excelのダウンロード
-        excel_buf = io.BytesIO()
-        with pd.ExcelWriter(excel_buf, engine='openpyxl') as writer:
-            df_all = pd.DataFrame([
-                {"種別": "ゆうメール", "規格": "500g", "運賃": 136, "個数": m_500, "小計": m_500 * 136},
-                {"種別": "ゆうメール", "規格": "1kg", "運賃": 193, "個数": m_1k, "小計": m_1k * 193},
-                {"種別": "ゆうメール", "規格": "2kg", "運賃": 286, "個数": m_2k, "小計": m_2k * 286},
-                {"種別": "ゆうメール", "規格": "3kg", "運賃": 422, "個数": m_3k, "小計": m_3k * 422},
-                {"種別": "ゆうパケット", "規格": "1cm", "運賃": 173, "個数": pk_1, "小計": pk_1 * 173},
-                {"種別": "ゆうパケット", "規格": "2cm", "運賃": 204, "個数": pk_2, "小計": pk_2 * 204},
-                {"種別": "ゆうパケット", "規格": "3cm", "運賃": 280, "個数": pk_3, "小計": pk_3 * 280},
-                {"種別": "定形外", "規格": "510円", "運賃": 510, "個数": t_510, "小計": t_510 * 510},
-                {"種別": "定形外", "規格": "350円", "運賃": 350, "個数": t_350, "小計": t_350 * 350},
-                {"種別": "定形外", "規格": "220円", "運賃": 220, "個数": t_220, "小計": t_220 * 220},
-                {"種別": "【総合計】", "規格": "-", "運賃": "-", "個数": grand_cnt, "小計": grand_total},
+        with col_yp:
+            st.markdown("#### 📦 ゆうパック運賃（兵庫発 / 1点60円引き）")
+            df_youpack = pd.DataFrame([
+                {"地域": "兵庫県内", "都道府県": "兵庫", "60サイズ(正規)": "820円", "60サイズ(契約)": "499円", "80サイズ(正規)": "1,130円", "80サイズ(契約)": "688円"},
+                {"地域": "近畿・中国・四国・東海・北陸", "都道府県": "大阪 京都 奈良 滋賀 和歌山 / 岡山 広島 鳥取 島根 山口 / 徳島 香川 愛媛 高知 / 静岡 愛知 岐阜 三重 / 富山 石川 福井", "60サイズ(正規)": "880円", "60サイズ(契約)": "536円", "80サイズ(正規)": "1,200円", "80サイズ(契約)": "731円"},
+                {"地域": "関東・信越・九州", "都道府県": "東京 神奈川 埼玉 千葉 茨城 栃木 群馬 山梨 / 新潟 長野 / 福岡 佐賀 長崎 熊本 大分 宮崎 鹿児島", "60サイズ(正規)": "990円", "60サイズ(契約)": "603円", "80サイズ(正規)": "1,310円", "80サイズ(契約)": "798円"},
+                {"地域": "東北", "都道府県": "青森 岩手 宮城 秋田 山形 福島", "60サイズ(正規)": "1,150円", "60サイズ(契約)": "700円", "80サイズ(正規)": "1,440円", "80サイズ(契約)": "877円"},
+                {"地域": "沖縄", "都道府県": "沖縄", "60サイズ(正規)": "1,450円", "60サイズ(契約)": "883円", "80サイズ(正規)": "1,810円", "80サイズ(契約)": "1,236円"},
+                {"地域": "北海道", "都道府県": "北海道", "60サイズ(正規)": "1,740円", "60サイズ(契約)": "1,244円", "80サイズ(正規)": "2,040円", "80サイズ(契約)": "1,466円"},
             ])
-            df_all.to_excel(writer, index=False, sheet_name="後納計算結果")
+            st.dataframe(df_youpack, use_container_width=True, hide_index=True)
 
-        st.download_button(
-            label="⬇️ この計算結果をExcelとして保存",
-            data=excel_buf.getvalue(),
-            file_name="後納計算結果.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
+        with col_other:
+            st.markdown("#### 🕒 集荷受付時間")
+            st.info("""
+            * **前日 18:00まで** ➔ 翌日 **10:00 〜 13:00**
+            * **当日 12:00まで** ➔ 当日 **13:00 〜 15:00**
+            * **当日 15:00まで** ➔ 当日 **15:00 〜 18:00**
+            """)
+
+            st.markdown("#### ✉️ レターパック")
+            st.markdown("""
+            | 種別 | 料金 |
+            | :--- | :---: |
+            | レターパックライト | **430 円** |
+            | レターパックプラス | **600 円** |
+            """)
+
+            st.markdown("#### 📏 ゆうパケット規格")
+            st.caption("3辺合計 60cm以内 ／ 長辺 34cm以内 ／ 厚さ 3cm以内 ／ 重量 1kgまで")
