@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import io
-import re
 import openpyxl
 from openpyxl.utils import get_column_letter
 
@@ -119,36 +118,87 @@ if menu == "📦 出荷CSV整形":
                 st.error(f"`{f.name}` 内に判定用列が見つかりませんでした。")
 
 # ==========================================
-# 2. ゆうびん後納計算機能
+# 2. ゆうびん後納計算機能（テンキー連続加算UI）
 # ==========================================
 elif menu == "📮 ゆうびん後納計算":
     st.title("📮 ゆうびん後納計算（ゆうパケット）")
-    st.caption("塊ごとの個数を「12+9+14」や「12 9 14」のように入力すると自動合算して計算します。")
+    st.caption("数字を入力して Enter を押すだけで次々加算されます。（+やスペースの入力は不要です）")
 
-    def parse_count_input(text_val):
-        """12+9+14 や 12, 9, 14 などの文字列から数値を抽出して合算"""
-        if not text_val or not text_val.strip():
-            return 0
-        numbers = re.findall(r"\d+", text_val)
-        return sum(int(n) for n in numbers) if numbers else 0
+    # セッション状態の初期化（加算履歴の保持）
+    for key in ["history_1cm", "history_2cm", "history_3cm"]:
+        if key not in st.session_state:
+            st.session_state[key] = []
+
+    def add_count(thickness_key, input_key):
+        val = st.session_state[input_key]
+        if val and val.strip().isdigit():
+            st.session_state[thickness_key].append(int(val.strip()))
+        st.session_state[input_key] = ""
 
     col1, col2, col3 = st.columns(3)
+
+    # 1cm 入力ブロック
     with col1:
-        raw_1cm = st.text_input("1cm 個数加算（例: 12+9+14）", value="", placeholder="12+9+14", key="p1")
-        p_cnt_1cm = parse_count_input(raw_1cm)
-        st.caption(f"➔ 合計: **{p_cnt_1cm}** 通 (後納173円 / 正規250円)")
+        st.markdown("### 1cm (後納173円 / 正規250円)")
+        st.text_input("数字を打って Enter", key="in_1cm", on_change=add_count, args=("history_1cm", "in_1cm"), placeholder="例: 12")
+        
+        sum_1 = sum(st.session_state.history_1cm)
+        st.markdown(f"現在合計: **{sum_1}** 通")
+        if st.session_state.history_1cm:
+            st.caption(f"内訳: {' + '.join(map(str, st.session_state.history_1cm))}")
+        
+        b1, b2 = st.columns(2)
+        if b1.button("↩ 1つ取消", key="undo_1cm"):
+            if st.session_state.history_1cm:
+                st.session_state.history_1cm.pop()
+                st.rerun()
+        if b2.button("リセット", key="reset_1cm"):
+            st.session_state.history_1cm = []
+            st.rerun()
 
+    # 2cm 入力ブロック
     with col2:
-        raw_2cm = st.text_input("2cm 個数加算（例: 5+4）", value="", placeholder="5+4", key="p2")
-        p_cnt_2cm = parse_count_input(raw_2cm)
-        st.caption(f"➔ 合計: **{p_cnt_2cm}** 通 (後納204円 / 正規310円)")
+        st.markdown("### 2cm (後納204円 / 正規310円)")
+        st.text_input("数字を打って Enter", key="in_2cm", on_change=add_count, args=("history_2cm", "in_2cm"), placeholder="例: 9")
+        
+        sum_2 = sum(st.session_state.history_2cm)
+        st.markdown(f"現在合計: **{sum_2}** 通")
+        if st.session_state.history_2cm:
+            st.caption(f"内訳: {' + '.join(map(str, st.session_state.history_2cm))}")
+        
+        b1, b2 = st.columns(2)
+        if b1.button("↩ 1つ取消", key="undo_2cm"):
+            if st.session_state.history_2cm:
+                st.session_state.history_2cm.pop()
+                st.rerun()
+        if b2.button("リセット", key="reset_2cm"):
+            st.session_state.history_2cm = []
+            st.rerun()
 
+    # 3cm 入力ブロック
     with col3:
-        raw_3cm = st.text_input("3cm 個数加算（例: 2+1）", value="", placeholder="2+1", key="p3")
-        p_cnt_3cm = parse_count_input(raw_3cm)
-        st.caption(f"➔ 合計: **{p_cnt_3cm}** 通 (後納280円 / 正規360円)")
+        st.markdown("### 3cm (後納280円 / 正規360円)")
+        st.text_input("数字を打って Enter", key="in_3cm", on_change=add_count, args=("history_3cm", "in_3cm"), placeholder="例: 14")
+        
+        sum_3 = sum(st.session_state.history_3cm)
+        st.markdown(f"現在合計: **{sum_3}** 通")
+        if st.session_state.history_3cm:
+            st.caption(f"内訳: {' + '.join(map(str, st.session_state.history_3cm))}")
+        
+        b1, b2 = st.columns(2)
+        if b1.button("↩ 1つ取消", key="undo_3cm"):
+            if st.session_state.history_3cm:
+                st.session_state.history_3cm.pop()
+                st.rerun()
+        if b2.button("リセット", key="reset_3cm"):
+            st.session_state.history_3cm = []
+            st.rerun()
 
     # 金額計算
+    p_cnt_1cm = sum(st.session_state.history_1cm)
+    p_cnt_2cm = sum(st.session_state.history_2cm)
+    p_cnt_3cm = sum(st.session_state.history_3cm)
+
     tot_1cm = p_cnt_1cm * 173
     tot_2cm = p_cnt_2cm * 204
     tot_3cm = p_cnt_3cm * 280
@@ -162,7 +212,7 @@ elif menu == "📮 ゆうびん後納計算":
     m1.metric("総個数", f"{all_cnt} 通")
     m2.metric("後納運賃 合計", f"{all_tot:,} 円")
 
-    # 一覧表（正規合計は除外、正規単価のみ表示）
+    # 一覧表（正規単価のみ表示）
     df_packet = pd.DataFrame([
         {"区分": "1cm", "運賃(後納)": "173 円", "正規料金": "250 円", "個数": f"{p_cnt_1cm} 通", "合計(後納)": f"{tot_1cm:,} 円"},
         {"区分": "2cm", "運賃(後納)": "204 円", "正規料金": "310 円", "個数": f"{p_cnt_2cm} 通", "合計(後納)": f"{tot_2cm:,} 円"},
@@ -171,13 +221,19 @@ elif menu == "📮 ゆうびん後納計算":
     ])
     st.table(df_packet)
 
+    # 全リセットボタン
+    if st.button("🗑️ すべての厚みを0にリセット"):
+        st.session_state.history_1cm = []
+        st.session_state.history_2cm = []
+        st.session_state.history_3cm = []
+        st.rerun()
+
     # ==========================================
-    # 送料早見表セクション（ウィンドウ100%にしなくても全文が見える全幅テーブル）
+    # 送料早見表セクション（全幅表示）
     # ==========================================
     st.markdown("---")
     st.subheader("📋 送料早見表")
 
-    # ゆうパック運賃表（全幅HTMLレスポンシブデザイン）
     youpack_html = """
     <div style="width:100%; overflow-x:auto; margin-bottom:20px;">
         <table style="width:100%; border-collapse:collapse; font-size:13px; text-align:center; background:#fff;">
@@ -247,7 +303,6 @@ elif menu == "📮 ゆうびん後納計算":
     """
     st.markdown(youpack_html, unsafe_allow_html=True)
 
-    # その他規格
     c_lp, c_std = st.columns([1, 1])
     with c_lp:
         st.markdown("#### ✉️ レターパック")
