@@ -1,95 +1,86 @@
-import pandas as pd
 import streamlit as st
+import pandas as pd
 import io
-import re
 
-# ページの基本設定
-st.set_page_config(
-    page_title="出荷ファイル自動整形Webシステム",
-    layout="centered",
-    initial_sidebar_state="expanded"
+st.set_page_config(page_title="出荷ファイル自動整形Webシステム", layout="wide")
+st.title("📦 出荷ファイル自動整形Webシステム")
+st.caption("ブラウザ上で元データを読み込み、チェックボックスで担当者を選ぶだけで、不要な行の非表示・整形を自動で行います。")
+
+# 1. 元データのアップロード（複数ファイルを許可してエラーを排除）
+st.subheader("1. 元データのアップロード")
+uploaded_files = st.file_uploader(
+    "メルカリ等の売却済みデータ CSV (複数選択・ドラッグ可)",
+    type=["csv"],
+    accept_multiple_files=True
 )
 
-st.title("📦 出荷ファイル自動整形Webシステム")
-st.markdown("ブラウザ上で元データを読み込み、チェックボックスで担当者を選ぶだけで、不要な行の非表示・整形を自動で行います。")
+if uploaded_files:
+    dfs = []
+    for f in uploaded_files:
+        try:
+            # Shift-JIS / UTF-8 両対応
+            try:
+                df_temp = pd.read_csv(f, encoding="cp932")
+            except Exception:
+                f.seek(0)
+                df_temp = pd.read_csv(f, encoding="utf-8")
+            dfs.append(df_temp)
+        except Exception:
+            continue
 
-# 1. ファイルのアップロード
-st.header("1. 元データのアップロード")
-uploaded_file = st.file_uploader("メルカリ等の売却済みデータ CSV (例: orders_...csv)", type=["csv"])
+    if dfs:
+        df = pd.concat(dfs, ignore_index=True).drop_duplicates()
+        st.success(f"ファイルを正常に読み込みました（全 {len(df)} 件）")
 
-if uploaded_file is not None:
-    # 文字コードの自動判定（Shift_JISまたはUTF-8）
-    try:
-        df = pd.read_csv(uploaded_file, encoding="cp932")
-    except UnicodeDecodeError:
-        uploaded_file.seek(0)
-        df = pd.read_csv(uploaded_file, encoding="utf-8")
+        # 識別カラムの探索
+        target_col = None
+        for col in ["original_product_id", "商品管理番号", "管理番号"]:
+            if col in df.columns:
+                target_col = col
+                break
 
-    st.success(f"ファイルを正常に読み込みました（全 {len(df)} 件）")
+        if target_col:
+            st.caption(f"データ内の識別カラム： {target_col}")
 
-    # 管理番号やSKU、担当者コードが入っている列を自動検出
-    target_col = None
-    for col in ["original_product_id", "品名２", "品名１", "お客様管理番号"]:
-        if col in df.columns:
-            target_col = col
-            break
+            # 2. 残す担当者の選択
+            st.subheader("2. 残す担当者の選択")
+            st.write("チェックを入れた担当者のデータのみを残し、他を自動で非表示（除外）します。")
 
-    if target_col:
-        st.info(f"データ内の識別カラム： **{target_col}**")
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                chk_ami = st.checkbox("担当: ami", value=True)
+            with col2:
+                chk_kj = st.checkbox("担当: kj", value=True)
+            with col3:
+                chk_mb = st.checkbox("担当: mb", value=True)
+            with col4:
+                chk_sy = st.checkbox("担当: sy", value=True)
 
-        # データ内から担当者コード（_sy, _mb, _ami, _kj など）を自動で洗い出す
-        all_texts = df[target_col].dropna().astype(str).tolist()
-        found_managers = set()
-        for t in all_texts:
-            match = re.search(r'_([a-zA-Z]+)\d*$', t)
-            if match:
-                found_managers.add(match.group(1))
-        
-        if not found_managers:
-            found_managers = {"sy", "mb", "ami", "kj"}
+            selected_tags = []
+            if chk_ami: selected_tags.append("ami")
+            if chk_kj: selected_tags.append("kj")
+            if chk_mb: selected_tags.append("mb")
+            if chk_sy: selected_tags.append("sy")
 
-        # 2. 担当者の選択（チェックボックス）
-        st.header("2. 残す担当者の選択")
-        st.markdown("チェックを入れた担当者のデータのみを残し、他を自動で非表示（除外）します。")
-        
-        selected_managers = []
-        cols = st.columns(len(found_managers) if len(found_managers) > 0 else 4)
-        for i, mgr in enumerate(sorted(list(found_managers))):
-            # デフォルトで 'sy' にチェックを入れる
-            default_val = True if mgr.lower() == "sy" else False
-            with cols[i % len(cols)]:
-                if st.checkbox(f"担当: {mgr}", value=default_val, key=f"mgr_{mgr}"):
-                    selected_managers.append(mgr)
+            # 3. 処理の実行
+            st.subheader("3. 処理の実行")
+            if st.button("整形データを生成する", type="primary"):
+                if not selected_tags:
+                    st.warning("担当者を1名以上選択してください。")
+                else:
+                    pattern = "|".join(selected_tags)
+                    filtered_df = df[df[target_col].astype(str).str.contains(pattern, case=False, na=False)]
 
-        # 3. 実行ボタン
-        st.header("3. 処理の実行")
-        if st.button("✨ 選択した担当者以外を非表示・整形する", type="primary"):
-            if not selected_managers:
-                st.warning("少なくとも1つの担当者を選択してください。")
-            else:
-                # 選択された担当者にマッチする行を抽出
-                pattern = '|'.join([f"_{mgr}" for mgr in selected_managers])
-                mask = df[target_col].astype(str).str.contains(pattern, case=False, na=False)
-                
-                df_filtered = df[mask].copy()
-                excluded_count = len(df) - len(df_filtered)
+                    st.write(f"抽出結果: {len(filtered_df)} 件")
+                    st.dataframe(filtered_df)
 
-                st.write(f"📊 処理結果: 残ったデータ **{len(df_filtered)} 件** （非表示・除外したデータ {excluded_count} 件）")
-
-                # プレビュー表示
-                st.subheader("📋 処理後データのプレビュー（一部）")
-                st.dataframe(df_filtered.head(10))
-
-                # ダウンロード用ファイルの生成（Excelで開けるShift_JIS形式）
-                csv_buffer = io.BytesIO()
-                df_filtered.to_csv(csv_buffer, index=False, encoding="cp932", errors="replace")
-                csv_bytes = csv_buffer.getvalue()
-
-                st.download_button(
-                    label="📥 整形済みCSVファイルをダウンロード",
-                    data=csv_bytes,
-                    file_name="shipped_formatted.csv",
-                    mime="text/csv",
-                )
-    else:
-        st.error("ファイル内に管理番号や担当者コードの列が見つかりませんでした。")
+                    csv_buffer = io.BytesIO()
+                    filtered_df.to_csv(csv_buffer, index=False, encoding="cp932", errors="replace")
+                    st.download_button(
+                        label="整形済みCSVをダウンロード",
+                        data=csv_buffer.getvalue(),
+                        file_name="shipping_formatted.csv",
+                        mime="text/csv"
+                    )
+        else:
+            st.error("識別用のカラム（original_product_id等）が見つかりませんでした。")
