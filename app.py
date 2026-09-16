@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import io
+import re
 import openpyxl
 from openpyxl.utils import get_column_letter
 
@@ -122,80 +123,140 @@ if menu == "📦 出荷CSV整形":
 # ==========================================
 elif menu == "📮 ゆうびん後納計算":
     st.title("📮 ゆうびん後納計算（ゆうパケット）")
-    st.caption("1cm / 2cm / 3cm の個数を入力すると、後納運賃・正規料金および各合計を自動計算します。")
+    st.caption("塊ごとの個数を「12+9+14」や「12 9 14」のように入力すると自動合算して計算します。")
+
+    def parse_count_input(text_val):
+        """12+9+14 や 12, 9, 14 などの文字列から数値を抽出して合算"""
+        if not text_val or not text_val.strip():
+            return 0
+        numbers = re.findall(r"\d+", text_val)
+        return sum(int(n) for n in numbers) if numbers else 0
 
     col1, col2, col3 = st.columns(3)
     with col1:
-        p_cnt_1cm = st.number_input("1cm 個数 (後納173円 / 正規250円)", min_value=0, value=0, step=1, key="p1")
+        raw_1cm = st.text_input("1cm 個数加算（例: 12+9+14）", value="", placeholder="12+9+14", key="p1")
+        p_cnt_1cm = parse_count_input(raw_1cm)
+        st.caption(f"➔ 合計: **{p_cnt_1cm}** 通 (後納173円 / 正規250円)")
+
     with col2:
-        p_cnt_2cm = st.number_input("2cm 個数 (後納204円 / 正規310円)", min_value=0, value=0, step=1, key="p2")
+        raw_2cm = st.text_input("2cm 個数加算（例: 5+4）", value="", placeholder="5+4", key="p2")
+        p_cnt_2cm = parse_count_input(raw_2cm)
+        st.caption(f"➔ 合計: **{p_cnt_2cm}** 通 (後納204円 / 正規310円)")
+
     with col3:
-        p_cnt_3cm = st.number_input("3cm 個数 (後納280円 / 正規360円)", min_value=0, value=0, step=1, key="p3")
+        raw_3cm = st.text_input("3cm 個数加算（例: 2+1）", value="", placeholder="2+1", key="p3")
+        p_cnt_3cm = parse_count_input(raw_3cm)
+        st.caption(f"➔ 合計: **{p_cnt_3cm}** 通 (後納280円 / 正規360円)")
 
-    # 計算
+    # 金額計算
     tot_1cm = p_cnt_1cm * 173
-    reg_1cm = p_cnt_1cm * 250
-
     tot_2cm = p_cnt_2cm * 204
-    reg_2cm = p_cnt_2cm * 310
-
     tot_3cm = p_cnt_3cm * 280
-    reg_3cm = p_cnt_3cm * 360
 
     all_cnt = p_cnt_1cm + p_cnt_2cm + p_cnt_3cm
     all_tot = tot_1cm + tot_2cm + tot_3cm
-    all_reg = reg_1cm + reg_2cm + reg_3cm
 
     # サマリー表示
     st.markdown("---")
-    m1, m2, m3 = st.columns(3)
-    m1.metric("合計個数", f"{all_cnt} 通")
+    m1, m2 = st.columns(2)
+    m1.metric("総個数", f"{all_cnt} 通")
     m2.metric("後納運賃 合計", f"{all_tot:,} 円")
-    m3.metric("正規料金 合計", f"{all_reg:,} 円")
 
-    # 計算結果一覧表
+    # 一覧表（正規合計は除外、正規単価のみ表示）
     df_packet = pd.DataFrame([
-        {"区分": "1cm", "運賃(後納)": "173 円", "個数": f"{p_cnt_1cm} 通", "合計(後納)": f"{tot_1cm:,} 円", "正規料金": "250 円", "正規合計": f"{reg_1cm:,} 円"},
-        {"区分": "2cm", "運賃(後納)": "204 円", "個数": f"{p_cnt_2cm} 通", "合計(後納)": f"{tot_2cm:,} 円", "正規料金": "310 円", "正規合計": f"{reg_2cm:,} 円"},
-        {"区分": "3cm", "運賃(後納)": "280 円", "個数": f"{p_cnt_3cm} 通", "合計(後納)": f"{tot_3cm:,} 円", "正規料金": "360 円", "正規合計": f"{reg_3cm:,} 円"},
-        {"区分": "【合計】", "運賃(後納)": "-", "個数": f"{all_cnt} 通", "合計(後納)": f"{all_tot:,} 円", "正規料金": "-", "正規合計": f"{all_reg:,} 円"},
+        {"区分": "1cm", "運賃(後納)": "173 円", "正規料金": "250 円", "個数": f"{p_cnt_1cm} 通", "合計(後納)": f"{tot_1cm:,} 円"},
+        {"区分": "2cm", "運賃(後納)": "204 円", "正規料金": "310 円", "個数": f"{p_cnt_2cm} 通", "合計(後納)": f"{tot_2cm:,} 円"},
+        {"区分": "3cm", "運賃(後納)": "280 円", "正規料金": "360 円", "個数": f"{p_cnt_3cm} 通", "合計(後納)": f"{tot_3cm:,} 円"},
+        {"区分": "【合計】", "運賃(後納)": "-", "正規料金": "-", "個数": f"{all_cnt} 通", "合計(後納)": f"{all_tot:,} 円"},
     ])
-    st.dataframe(df_packet, use_container_width=True, hide_index=True)
+    st.table(df_packet)
 
     # ==========================================
-    # 送料早見表の参照セクション
+    # 送料早見表セクション（ウィンドウ100%にしなくても全文が見える全幅テーブル）
     # ==========================================
     st.markdown("---")
-    with st.expander("📋 【送料早見表】ゆうパック・レターパック・集荷時間（クリックで開閉）", expanded=True):
-        col_yp, col_other = st.columns([3, 2])
+    st.subheader("📋 送料早見表")
 
-        with col_yp:
-            st.markdown("#### 📦 ゆうパック運賃（兵庫発 / 1点60円引き）")
-            df_youpack = pd.DataFrame([
-                {"地域": "兵庫県内", "都道府県": "兵庫", "60サイズ(正規)": "820円", "60サイズ(契約)": "499円", "80サイズ(正規)": "1,130円", "80サイズ(契約)": "688円"},
-                {"地域": "近畿・中国・四国・東海・北陸", "都道府県": "大阪 京都 奈良 滋賀 和歌山 / 岡山 広島 鳥取 島根 山口 / 徳島 香川 愛媛 高知 / 静岡 愛知 岐阜 三重 / 富山 石川 福井", "60サイズ(正規)": "880円", "60サイズ(契約)": "536円", "80サイズ(正規)": "1,200円", "80サイズ(契約)": "731円"},
-                {"地域": "関東・信越・九州", "都道府県": "東京 神奈川 埼玉 千葉 茨城 栃木 群馬 山梨 / 新潟 長野 / 福岡 佐賀 長崎 熊本 大分 宮崎 鹿児島", "60サイズ(正規)": "990円", "60サイズ(契約)": "603円", "80サイズ(正規)": "1,310円", "80サイズ(契約)": "798円"},
-                {"地域": "東北", "都道府県": "青森 岩手 宮城 秋田 山形 福島", "60サイズ(正規)": "1,150円", "60サイズ(契約)": "700円", "80サイズ(正規)": "1,440円", "80サイズ(契約)": "877円"},
-                {"地域": "沖縄", "都道府県": "沖縄", "60サイズ(正規)": "1,450円", "60サイズ(契約)": "883円", "80サイズ(正規)": "1,810円", "80サイズ(契約)": "1,236円"},
-                {"地域": "北海道", "都道府県": "北海道", "60サイズ(正規)": "1,740円", "60サイズ(契約)": "1,244円", "80サイズ(正規)": "2,040円", "80サイズ(契約)": "1,466円"},
-            ])
-            st.dataframe(df_youpack, use_container_width=True, hide_index=True)
+    # ゆうパック運賃表（全幅HTMLレスポンシブデザイン）
+    youpack_html = """
+    <div style="width:100%; overflow-x:auto; margin-bottom:20px;">
+        <table style="width:100%; border-collapse:collapse; font-size:13px; text-align:center; background:#fff;">
+            <thead>
+                <tr style="background:#f1f3f5; border-bottom:2px solid #ccc;">
+                    <th style="padding:8px 6px; border:1px solid #ddd; width:16%;">地域</th>
+                    <th style="padding:8px 6px; border:1px solid #ddd; width:44%;">対象都道府県</th>
+                    <th style="padding:8px 6px; border:1px solid #ddd; width:10%;">60(正規)</th>
+                    <th style="padding:8px 6px; border:1px solid #ddd; width:10%; background:#e8f4fd;">60(契約)</th>
+                    <th style="padding:8px 6px; border:1px solid #ddd; width:10%;">80(正規)</th>
+                    <th style="padding:8px 6px; border:1px solid #ddd; width:10%; background:#e8f4fd;">80(契約)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="padding:6px; border:1px solid #ddd; font-weight:bold;">兵庫県内</td>
+                    <td style="padding:6px; border:1px solid #ddd; text-align:left;">兵庫</td>
+                    <td style="padding:6px; border:1px solid #ddd;">820円</td>
+                    <td style="padding:6px; border:1px solid #ddd; font-weight:bold; color:#0056b3; background:#f8fbfe;">499円</td>
+                    <td style="padding:6px; border:1px solid #ddd;">1,130円</td>
+                    <td style="padding:6px; border:1px solid #ddd; font-weight:bold; color:#0056b3; background:#f8fbfe;">688円</td>
+                </tr>
+                <tr>
+                    <td style="padding:6px; border:1px solid #ddd; font-weight:bold;">近畿・中国・四国<br>東海・北陸</td>
+                    <td style="padding:6px; border:1px solid #ddd; text-align:left; font-size:12px;">大阪 京都 奈良 滋賀 和歌山 / 岡山 広島 鳥取 島根 山口<br>徳島 香川 愛媛 高知 / 静岡 愛知 岐阜 三重 / 富山 石川 福井</td>
+                    <td style="padding:6px; border:1px solid #ddd;">880円</td>
+                    <td style="padding:6px; border:1px solid #ddd; font-weight:bold; color:#0056b3; background:#f8fbfe;">536円</td>
+                    <td style="padding:6px; border:1px solid #ddd;">1,200円</td>
+                    <td style="padding:6px; border:1px solid #ddd; font-weight:bold; color:#0056b3; background:#f8fbfe;">731円</td>
+                </tr>
+                <tr>
+                    <td style="padding:6px; border:1px solid #ddd; font-weight:bold;">関東・信越・九州</td>
+                    <td style="padding:6px; border:1px solid #ddd; text-align:left; font-size:12px;">東京 神奈川 埼玉 千葉 茨城 栃木 群馬 山梨 / 新潟 長野<br>福岡 佐賀 長崎 熊本 大分 宮崎 鹿児島</td>
+                    <td style="padding:6px; border:1px solid #ddd;">990円</td>
+                    <td style="padding:6px; border:1px solid #ddd; font-weight:bold; color:#0056b3; background:#f8fbfe;">603円</td>
+                    <td style="padding:6px; border:1px solid #ddd;">1,310円</td>
+                    <td style="padding:6px; border:1px solid #ddd; font-weight:bold; color:#0056b3; background:#f8fbfe;">798円</td>
+                </tr>
+                <tr>
+                    <td style="padding:6px; border:1px solid #ddd; font-weight:bold;">東北</td>
+                    <td style="padding:6px; border:1px solid #ddd; text-align:left;">青森 岩手 宮城 秋田 山形 福島</td>
+                    <td style="padding:6px; border:1px solid #ddd;">1,150円</td>
+                    <td style="padding:6px; border:1px solid #ddd; font-weight:bold; color:#0056b3; background:#f8fbfe;">700円</td>
+                    <td style="padding:6px; border:1px solid #ddd;">1,440円</td>
+                    <td style="padding:6px; border:1px solid #ddd; font-weight:bold; color:#0056b3; background:#f8fbfe;">877円</td>
+                </tr>
+                <tr>
+                    <td style="padding:6px; border:1px solid #ddd; font-weight:bold;">沖縄</td>
+                    <td style="padding:6px; border:1px solid #ddd; text-align:left;">沖縄</td>
+                    <td style="padding:6px; border:1px solid #ddd;">1,450円</td>
+                    <td style="padding:6px; border:1px solid #ddd; font-weight:bold; color:#0056b3; background:#f8fbfe;">883円</td>
+                    <td style="padding:6px; border:1px solid #ddd;">1,810円</td>
+                    <td style="padding:6px; border:1px solid #ddd; font-weight:bold; color:#0056b3; background:#f8fbfe;">1,236円</td>
+                </tr>
+                <tr>
+                    <td style="padding:6px; border:1px solid #ddd; font-weight:bold;">北海道</td>
+                    <td style="padding:6px; border:1px solid #ddd; text-align:left;">北海道</td>
+                    <td style="padding:6px; border:1px solid #ddd;">1,740円</td>
+                    <td style="padding:6px; border:1px solid #ddd; font-weight:bold; color:#0056b3; background:#f8fbfe;">1,244円</td>
+                    <td style="padding:6px; border:1px solid #ddd;">2,040円</td>
+                    <td style="padding:6px; border:1px solid #ddd; font-weight:bold; color:#0056b3; background:#f8fbfe;">1,466円</td>
+                </tr>
+            </tbody>
+        </table>
+        <div style="font-size:12px; color:#666; margin-top:4px;">※ゆうパック：兵庫発（契約運賃は1点あたり60円引き適用済み）</div>
+    </div>
+    """
+    st.markdown(youpack_html, unsafe_allow_html=True)
 
-        with col_other:
-            st.markdown("#### 🕒 集荷受付時間")
-            st.info("""
-            * **前日 18:00まで** ➔ 翌日 **10:00 〜 13:00**
-            * **当日 12:00まで** ➔ 当日 **13:00 〜 15:00**
-            * **当日 15:00まで** ➔ 当日 **15:00 〜 18:00**
-            """)
-
-            st.markdown("#### ✉️ レターパック")
-            st.markdown("""
-            | 種別 | 料金 |
-            | :--- | :---: |
-            | レターパックライト | **430 円** |
-            | レターパックプラス | **600 円** |
-            """)
-
-            st.markdown("#### 📏 ゆうパケット規格")
-            st.caption("3辺合計 60cm以内 ／ 長辺 34cm以内 ／ 厚さ 3cm以内 ／ 重量 1kgまで")
+    # その他規格
+    c_lp, c_std = st.columns([1, 1])
+    with c_lp:
+        st.markdown("#### ✉️ レターパック")
+        st.markdown("""
+        | 種別 | 料金 |
+        | :--- | :---: |
+        | レターパックライト | **430 円** |
+        | レターパックプラス | **600 円** |
+        """)
+    with c_std:
+        st.markdown("#### 📏 ゆうパケット規格")
+        st.info("3辺合計 60cm以内 ／ 長辺 34cm以内 ／ 厚さ 3cm以内 ／ 重量 1kgまで")
